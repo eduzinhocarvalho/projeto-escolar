@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energia Consciente - Monitoramento Escolar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #6e45e2;
+            --secondary: #88d3ce;
+            --accent: #ff7e5f;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --bg-color: #1a1a2e;
+            --text-color: #f8f9fa;
+            --card-bg: rgba(255,255,255,0.05);
+            --card-border: rgba(255,255,255,0.1);
+            --header-bg: linear-gradient(135deg, var(--primary), var(--secondary));
+            --nav-bg: rgba(26, 26, 46, 0.9);
+            --footer-bg: linear-gradient(135deg, var(--primary), var(--dark));
+        }
+
+        [data-theme="light"] {
+            --primary: #6a11cb;
+            --secondary: #2575fc;
+            --accent: #ff3e9d;
+            --text: #333;
+            --text-light: #f8f9fa;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --bg-color: #f8f9fa;
+            --text-color: #1a1a2e;
+            --card-bg: rgba(26, 26, 46, 0.05);
+            --card-border: rgba(26, 26, 46, 0.1);
+            --header-bg: linear-gradient(135deg, #88d3ce, #6e45e2);
+            --nav-bg: rgba(248, 249, 250, 0.9);
+            --footer-bg: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            perspective: 1000px;
+            padding-top: 80px;
+        }
+        
+        .cursor-follower {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, var(--accent) 0%, rgba(255,126,95,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: screen;
+        }
+        
+        header {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 2rem;
+            overflow: hidden;
+        }
+        
+        .header-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--header-bg);
+            z-index: -1;
+            transform: skewY(-6deg);
+            transform-origin: top left;
+        }
+        
+        h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--text-color), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            max-width: 800px;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .energy-visual {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--card-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
+            position: relative;
+            transition: transform 0.5s ease;
+        }
+        
+        .energy-visual:hover {
+            transform: scale(1.05) rotate(5deg);
+        }
+        
+        .energy-visual::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent) 0% 30%, transparent 30% 100%);
+            animation: rotate 10s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .energy-value {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(to right, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            z-index: 1;
+        }
+        
+        .scroll-down {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+            40% { transform: translateY(-20px) translateX(-50%); }
+            60% { transform: translateY(-10px) translateX(-50%); }
+        }
+        
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo-img {
+            height: 40px;
+            width: auto;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: bold;
+            position: relative;
+            padding: 0.5rem 0;
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        section {
+            padding: 6rem 2rem;
+            position: relative;
+            min-height: 100vh;
+            scroll-margin-top: 80px;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            border-radius: 3px;
+        }
+        
+        .data-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+        
+        .data-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2rem;
+            width: 300px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--card-border);
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+        
+        .data-card:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.1);
+        }
+
+        [data-theme="light"] .data-card:hover {
+            background: rgba(26, 26, 46, 0.1);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+        
+        .card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .chart-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 2rem auto;
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--card-border);
+        }
+        
+        .chart-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
+        }
+        
+        .chart-wrapper {
+            flex: 1;
+            min-width: 300px;
+            max-width: 45%;
+        }
+        
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .tip-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--card-border);
+        }
+        
+        .tip-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.1);
+        }
+
+        [data-theme="light"] .tip-card:hover {
+            background: rgba(26, 26, 46, 0.1);
+        }
+        
+        .tip-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+        
+        footer {
+            background: var(--footer-bg);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-links a {
+            color: var(--light);
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+        
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--secondary);
+        }
+        
+        .form-group input, 
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 5px;
+            color: var(--text-color);
+            font-family: inherit;
+        }
+        
+        .form-group input:focus, 
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255,255,255,0.2);
+        }
+
+        [data-theme="light"] .form-group input:focus,
+        [data-theme="light"] .form-group select:focus,
+        [data-theme="light"] .form-group textarea:focus {
+            background: rgba(26, 26, 46, 0.2);
+        }
+        
+        .form-group select option {
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .btn {
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+        
+        .btn-secondary {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(to right, #ff5f6d, #ff7e5f);
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .category-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid var(--card-border);
+        }
+        
+        .category-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent);
+        }
+
+        [data-theme="light"] .category-card:hover {
+            background: rgba(26, 26, 46, 0.1);
+        }
+        
+        .category-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+        
+        .category-details {
+            display: none;
+            margin-top: 2rem;
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+        }
+        
+        .category-details.active {
+            display: block;
+        }
+        
+        .category-chart {
+            height: 200px;
+            margin-top: 1rem;
+        }
+        
+        [data-animate] {
+            opacity: 0;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        [data-animate="fade-up"] {
+            transform: translateY(50px);
+        }
+        
+        [data-theme="light"] [data-animate="fade-up"] {
+            transform: translateY(50px);
+        }
+        
+        [data-animate="fade-left"] {
+            transform: translateX(-50px);
+        }
+        
+        [data-animate="fade-right"] {
+            transform: translateX(50px);
+        }
+        
+        [data-animate].animate {
+            opacity: 1;
+            transform: translate(0);
+        }
+
+        /* Toggle Theme */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .theme-toggle i {
+            font-size: 1.2rem;
+        }
+
+        .theme-toggle .dark-icon {
+            display: none;
+        }
+
+        [data-theme="light"] .theme-toggle .light-icon {
+            display: none;
+        }
+
+        [data-theme="light"] .theme-toggle .dark-icon {
+            display: inline;
+        }
+
+        /* Estilos para abas de registro */
+        .registro-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        .registro-tab {
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .registro-tab.active {
+            border-bottom-color: var(--accent);
+            color: var(--accent);
+        }
+        
+        .registro-tab:hover {
+            color: var(--accent);
+        }
+        
+        .registro-form {
+            display: none;
+        }
+        
+        .registro-form.active {
+            display: block;
+        }
+        
+        /* Estilos para a tabela de registros */
+        .registros-container {
+            margin-top: 2rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        th {
+            background: rgba(255,255,255,0.1);
+            font-weight: bold;
+            color: var(--secondary);
+        }
+        
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .export-btn {
+            margin-top: 1rem;
+            display: inline-block;
+        }
+        
+        /* Estilos para os formulários lado a lado */
+        .registro-forms-container {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .registro-form-container {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--card-border);
+        }
+        
+        @media (max-width: 768px) {
+            .registro-forms-container {
+                flex-direction: column;
+            }
+            
+            .chart-wrapper {
+                max-width: 100%;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .theme-toggle span {
+                display: none;
+            }
+
+            .theme-toggle {
+                padding: 0.5rem;
+            }
+            
+            .registro-tabs {
+                flex-direction: column;
+            }
+            
+            .registro-tab {
+                border-bottom: none;
+                border-left: 3px solid transparent;
+                padding: 0.5rem 1rem;
+            }
+            
+            .registro-tab.active {
+                border-left-color: var(--accent);
+                border-bottom: none;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor-follower"></div>
+    
+    <nav>
+        <div class="logo-container">
+            <img src="img/logo.png" alt="Logo" class="logo-img">
+            <h2>Energia Consciente</h2>
+        </div>
+        <div class="nav-links">
+            <a href="#graficos">Gráficos</a>
+            <a href="#registro">Registrar</a>
+            <a href="#registros">Registros</a>
+            <a href="#categorias">Categorias</a>
+            <a href="#dicas">Dicas</a>
+            <div class="theme-toggle" id="themeToggle" title="Alternar tema">
+                <i class="fas fa-moon light-icon"></i>
+                <i class="fas fa-sun dark-icon"></i>
+                <span class="theme-text">Tema</span>
+            </div>
+        </div>
+    </nav>
+    
+    <header id="inicio">
+        <div class="header-bg"></div>
+        <h1 data-animate="fade-up">Energia Consciente</h1>
+        <p class="subtitle" data-animate="fade-up" data-animate-delay="0.2s">Monitoramento do consumo de energia elétrica no Colégio Estadual Talita Bresolin</p>
+        
+        <div class="energy-visual" data-animate="fade-up" data-animate-delay="0.4s">
+            <div class="energy-value">17.300 kWh</div>
+        </div>
+        
+        <p data-animate="fade-up" data-animate-delay="0.6s">Consumo mensal atual - Junho</p>
+        
+        <div class="scroll-down" data-animate="fade-up" data-animate-delay="0.8s">
+            <a href="#graficos" style="color: inherit; text-decoration: none;">↓</a>
+        </div>
+    </header>
+    
+    <section id="graficos">
+        <h2 class="section-title" data-animate="fade-up">Gráficos de Consumo</h2>
+        
+        <div class="chart-row">
+            <div class="chart-wrapper">
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-wrapper">
+                <div class="chart-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section id="registro" style="background: rgba(0,0,0,0.2);">
+        <h2 class="section-title" data-animate="fade-up">Registrar Consumo</h2>
+        
+        <div class="registro-forms-container" data-animate="fade-up" data-animate-delay="0.2s">
+            <!-- Formulário do Registro Geral -->
+            <div class="registro-form-container">
+                <h3 style="margin-bottom: 1.5rem; color: var(--accent); text-align: center;">Registro Geral</h3>
+                <form id="registroForm1">
+                    <div class="form-group">
+                        <label for="mes1">Mês</label>
+                        <select id="mes1" required>
+                            <option value="">Selecione o mês</option>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6" selected>Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="consumo1">Consumo (kWh)</label>
+                        <input type="number" id="consumo1" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="valor1">Valor (R$)</label>
+                        <input type="number" id="valor1" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="observacoes1">Observações</label>
+                        <textarea id="observacoes1" rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">Registrar Consumo Geral</button>
+                </form>
+            </div>
+            
+            <!-- Formulário do Registro por Categoria -->
+            <div class="registro-form-container">
+                <h3 style="margin-bottom: 1.5rem; color: var(--accent); text-align: center;">Registro por Categoria</h3>
+                <form id="registroForm2">
+                    <div class="form-group">
+                        <label for="mes2">Mês</label>
+                        <select id="mes2" required>
+                            <option value="">Selecione o mês</option>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6" selected>Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="categoria2">Categoria</label>
+                        <select id="categoria2" required>
+                            <option value="">Selecione a categoria</option>
+                            <option value="lampadas">Lâmpadas</option>
+                            <option value="climatizadores">Climatizadores</option>
+                            <option value="ventiladores">Ventiladores</option>
+                            <option value="computadores">Computadores</option>
+                            <option value="cameras">Câmeras</option>
+                            <option value="geladeiras">Geladeiras</option>
+                            <option value="impressoras">Impressoras</option>
+                            <option value="tvs">TVs</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="local2">Local</label>
+                        <select id="local2" required>
+                            <option value="">Selecione o local</option>
+                            <option value="pavilhao_principal">Pavilhão Principal</option>
+                            <option value="pavilhao_sueli">Pavilhão da Sueli</option>
+                            <option value="pavilhao_baixo">Pavilhão de Baixo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="consumo2">Consumo (kWh)</label>
+                        <input type="number" id="consumo2" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="observacoes2">Observações</label>
+                        <textarea id="observacoes2" rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">Registrar Consumo por Categoria</button>
+                </form>
+            </div>
+        </div>
+    </section>
+    
+    <section id="registros">
+        <h2 class="section-title" data-animate="fade-up">Todos os Registros</h2>
+        
+        <div class="form-container" data-animate="fade-up" data-animate-delay="0.2s">
+            <div class="registro-tabs">
+                <div class="registro-tab active" data-tab="registros-gerais">Registros Gerais</div>
+                <div class="registro-tab" data-tab="registros-categorias">Registros por Categoria</div>
+            </div>
+            
+            <div id="registros-gerais" class="registros-container" style="display: block;">
+                <table id="tabela-registros-gerais">
+                    <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th>Consumo (kWh)</th>
+                            <th>Valor (R$)</th>
+                            <th>Observações</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela-gerais">
+                        <!-- Registros serão inseridos aqui via JavaScript -->
+                    </tbody>
+                </table>
+                <button id="exportar-gerais" class="btn export-btn">
+                    <i class="fas fa-download"></i> Exportar para TXT
+                </button>
+            </div>
+            
+            <div id="registros-categorias" class="registros-container" style="display: none;">
+                <table id="tabela-registros-categorias">
+                    <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th>Categoria</th>
+                            <th>Local</th>
+                            <th>Consumo (kWh)</th>
+                            <th>Observações</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela-categorias">
+                        <!-- Registros serão inseridos aqui via JavaScript -->
+                    </tbody>
+                </table>
+                <button id="exportar-categorias" class="btn export-btn">
+                    <i class="fas fa-download"></i> Exportar para TXT
+                </button>
+            </div>
+        </div>
+    </section>
+    
+    <section id="categorias">
+        <h2 class="section-title" data-animate="fade-up">Consumo por Categoria</h2>
+        
+        <div class="chart-row">
+            <div class="chart-wrapper">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="category-grid">
+            <div class="category-card" data-category="lampadas">
+                <div class="category-icon">💡</div>
+                <h3>Lâmpadas</h3>
+                <p>1.522 kWh</p>
+            </div>
+            
+            <div class="category-card" data-category="climatizadores">
+                <div class="category-icon">❄️</div>
+                <h3>Climatizadores</h3>
+                <p>7.200 kWh</p>
+            </div>
+            
+            <div class="category-card" data-category="ventiladores">
+                <div class="category-icon">🌀</div>
+                <h3>Ventiladores</h3>
+                <p>1.728 kWh</p>
+            </div>
+            
+            <div class="category-card" data-category="computadores">
+                <div class="category-icon">💻</div>
+                <h3>Computadores</h3>
+                <p>4.752 kWh</p>
+            </div>
+            
+            <div class="category-card" data-category="cameras">
+                <div class="category-icon">📷</div>
+                <h3>Câmeras</h3>
+                <p>1.260 kWh</p>
+            </div>
+            
+            <div class="category-card" data-category="geladeiras">
+                <div class="category-icon">🧊</div>
+                <h3>Geladeiras</h3>
+                <p>360 kWh</p>
+            </div>
+            
+            <div class="category-card" data-category="impressoras">
+                <div class="category-icon">🖨️</div>
+                <h3>Impressoras</h3>
+                <p>132 kWh</p>
+            </div>
+            
+            <div class="category-card" data-category="tvs">
+                <div class="category-icon">📺</div>
+                <h3>TVs</h3>
+                <p>345 kWh</p>
+            </div>
+        </div>
+    </section>
+    
+    <section id="dicas" style="background: rgba(0,0,0,0.2);">
+        <h2 class="section-title" data-animate="fade-up">Dicas de Economia</h2>
+        
+        <div class="tips-grid">
+            <div class="tip-card" data-animate="fade-up">
+                <div class="tip-icon">💡</div>
+                <h3>Iluminação</h3>
+                <p>Substitua lâmpadas incandescentes por LED, que consomem até 80% menos energia.</p>
+            </div>
+            
+            <div class="tip-card" data-animate="fade-up" data-animate-delay="0.1s">
+                <div class="tip-icon">🖥️</div>
+                <h3>Equipamentos</h3>
+                <p>Desligue computadores e equipamentos quando não estiverem em uso.</p>
+            </div>
+            
+            <div class="tip-card" data-animate="fade-up" data-animate-delay="0.2s">
+                <div class="tip-icon">☀️</div>
+                <h3>Iluminação Natural</h3>
+                <p>Aproveite ao máximo a luz natural durante o dia.</p>
+            </div>
+            
+            <div class="tip-card" data-animate="fade-up" data-animate-delay="0.3s">
+                <div class="tip-icon">🌡️</div>
+                <h3>Temperatura</h3>
+                <p>Deixe os aparelhos de ar condicionado ligado apenas quando precisar.</p>
+            </div>
+            
+            <div class="tip-card" data-animate="fade-up" data-animate-delay="0.4s">
+                <div class="tip-icon">🔌</div>
+                <h3>Standby</h3>
+                <p>Retire da tomada equipamentos que não estão sendo usados.</p>
+            </div>
+            
+            <div class="tip-card" data-animate="fade-up" data-animate-delay="0.5s">
+                <div class="tip-icon">🔄</div>
+                <h3>Manutenção</h3>
+                <p>Realize manutenção periódica nos equipamentos elétricos.</p>
+            </div>
+        </div>
+    </section>
+    
+    <footer>
+        <div class="footer-links">
+            <a href="#graficos">Gráficos</a>
+            <a href="#registro">Registrar</a>
+            <a href="#registros">Registros</a>
+            <a href="#categorias">Categorias</a>
+            <a href="#dicas">Dicas</a>
+        </div>
+        <p>Colégio Estadual Talita Bresolin © 2023 - Todos os direitos reservados</p>
+    </footer>
+    
+    <script>
+        // Controle do tema
+        const themeToggle = document.getElementById('themeToggle');
+        const themeText = document.querySelector('.theme-text');
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        // Verificar preferência do sistema ou armazenamento local
+        const currentTheme = localStorage.getItem('theme') || 
+                           (prefersDarkScheme.matches ? 'dark' : 'light');
+        
+        // Aplicar tema inicial
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        updateThemeText(currentTheme);
+        
+        // Alternar tema
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeText(newTheme);
+            
+            // Atualizar gráficos ao mudar o tema
+            initCharts();
+            initCategoryChart();
+        });
+        
+        function updateThemeText(theme) {
+            themeText.textContent = theme === 'dark' ? 'Modo Escuro' : 'Modo Claro';
+        }
+
+        // Dados para armazenamento
+        let registrosGerais = JSON.parse(localStorage.getItem('registrosGerais')) || [];
+        let registrosCategorias = JSON.parse(localStorage.getItem('registrosCategorias')) || [];
+        
+        // Dados para os gráficos principais
+        let consumoGeralData = {
+            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+            datasets: [{
+                label: 'Consumo Mensal (kWh)',
+                data: [16500, 15800, 17200, 16300, 15500, 17300],
+                backgroundColor: 'rgba(110, 69, 226, 0.7)',
+                borderColor: 'rgba(110, 69, 226, 1)',
+                borderWidth: 2
+            }]
+        };
+        
+        let variacaoMensalData = {
+            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+            datasets: [{
+                label: 'Variação Mensal (%)',
+                data: [0, -4.2, +8.9, -5.2, -4.9, +11.6],
+                backgroundColor: 'rgba(255, 126, 95, 0.2)',
+                borderColor: 'rgba(255, 126, 95, 1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            }]
+        };
+
+        // Dados para o gráfico de categorias
+        let categoryChartData = {
+            labels: ['Lâmpadas', 'Climatizadores', 'Ventiladores', 'Computadores', 'Câmeras', 'Geladeiras', 'Impressoras', 'TVs'],
+            datasets: [{
+                label: 'Consumo por Categoria (kWh)',
+                data: [1522, 7200, 1728, 4752, 1260, 360, 132, 345],
+                backgroundColor: [
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        // Salvar dados no localStorage
+        function salvarDados() {
+            localStorage.setItem('registrosGerais', JSON.stringify(registrosGerais));
+            localStorage.setItem('registrosCategorias', JSON.stringify(registrosCategorias));
+        }
+
+        // Inicializar gráficos
+        function initCharts() {
+            // Destruir gráficos existentes se houver
+            Chart.helpers.each(Chart.instances, (instance) => {
+                if (instance.canvas.id !== 'categoryChart') {
+                    instance.destroy();
+                }
+            });
+
+            // Gráfico de Barras (Consumo Geral)
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: consumoGeralData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: 'var(--text-color)'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + ' kWh';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                color: 'var(--text-color)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: 'var(--text-color)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico de Linhas (Variação Mensal)
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            new Chart(lineCtx, {
+                type: 'line',
+                data: variacaoMensalData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: 'var(--text-color)'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                color: 'var(--text-color)',
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: 'var(--text-color)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Inicializar gráfico de categorias
+        function initCategoryChart() {
+            // Destruir gráfico existente se houver
+            const categoryChartInstance = Chart.getChart('categoryChart');
+            if (categoryChartInstance) {
+                categoryChartInstance.destroy();
+            }
+
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(categoryCtx, {
+                type: 'bar',
+                data: categoryChartData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: 'var(--text-color)'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + ' kWh';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'var(--text-color)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: 'var(--text-color)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Alternar entre abas de visualização de registros
+        const registroViewTabs = document.querySelectorAll('#registros .registro-tab');
+        registroViewTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remover classe active de todas as abas
+                document.querySelectorAll('#registros .registro-tab').forEach(t => t.classList.remove('active'));
+                
+                // Adicionar classe active à aba clicada
+                tab.classList.add('active');
+                
+                // Esconder todos os containers
+                document.querySelectorAll('#registros .registros-container').forEach(container => {
+                    container.style.display = 'none';
+                });
+                
+                // Mostrar o container correspondente
+                const containerId = tab.getAttribute('data-tab');
+                document.getElementById(containerId).style.display = 'block';
+            });
+        });
+
+        // Formulário de Registro Geral (Registro 1)
+        const registroForm1 = document.getElementById('registroForm1');
+        registroForm1.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const mes = document.getElementById('mes1').value;
+            const consumo = parseFloat(document.getElementById('consumo1').value);
+            const valor = parseFloat(document.getElementById('valor1').value);
+            const observacoes = document.getElementById('observacoes1').value;
+            
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec'];
+            const mesIndex = parseInt(mes) - 1;
+            
+            if (mesIndex >= 0 && mesIndex < meses.length) {
+                // Criar novo registro
+                const novoRegistro = {
+                    id: Date.now(),
+                    mes: mesIndex + 1,
+                    mesNome: meses[mesIndex],
+                    consumo: consumo,
+                    valor: valor,
+                    observacoes: observacoes
+                };
+                
+                // Adicionar ao array de registros
+                registrosGerais.push(novoRegistro);
+                
+                // Salvar no localStorage
+                salvarDados();
+                
+                // Atualizar gráficos
+                atualizarGraficosGerais();
+                
+                // Atualizar tabela
+                atualizarTabelaRegistrosGerais();
+                
+                // Mostrar mensagem de sucesso
+                alert('Registro geral adicionado com sucesso!');
+                
+                // Limpar formulário
+                registroForm1.reset();
+            } else {
+                alert('Mês inválido!');
+            }
+        });
+
+        // Formulário de Registro por Categoria (Registro 2)
+        const registroForm2 = document.getElementById('registroForm2');
+        registroForm2.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const mes = document.getElementById('mes2').value;
+            const categoria = document.getElementById('categoria2').value;
+            const local = document.getElementById('local2').value;
+            const consumo = parseFloat(document.getElementById('consumo2').value);
+            const observacoes = document.getElementById('observacoes2').value;
+            
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec'];
+            const mesIndex = parseInt(mes) - 1;
+            
+            if (mesIndex >= 0 && mesIndex < meses.length) {
+                // Criar novo registro
+                const novoRegistro = {
+                    id: Date.now(),
+                    mes: mesIndex + 1,
+                    mesNome: meses[mesIndex],
+                    categoria: categoria,
+                    categoriaNome: document.getElementById('categoria2').options[document.getElementById('categoria2').selectedIndex].text,
+                    local: local,
+                    localNome: document.getElementById('local2').options[document.getElementById('local2').selectedIndex].text,
+                    consumo: consumo,
+                    observacoes: observacoes
+                };
+                
+                // Adicionar ao array de registros
+                registrosCategorias.push(novoRegistro);
+                
+                // Salvar no localStorage
+                salvarDados();
+                
+                // Atualizar dados da categoria
+                atualizarDadosCategoria(novoRegistro);
+                
+                // Atualizar tabela
+                atualizarTabelaRegistrosCategorias();
+                
+                // Mostrar mensagem de sucesso
+                alert('Registro por categoria adicionado com sucesso!');
+                
+                // Limpar formulário
+                registroForm2.reset();
+            } else {
+                alert('Mês inválido!');
+            }
+        });
+
+        // Atualizar gráficos com dados gerais
+        function atualizarGraficosGerais() {
+            // Limpar dados existentes
+            consumoGeralData.labels = [];
+            consumoGeralData.datasets[0].data = [];
+            variacaoMensalData.labels = [];
+            variacaoMensalData.datasets[0].data = [];
+            
+            // Ordenar registros por mês
+            registrosGerais.sort((a, b) => a.mes - b.mes);
+            
+            // Adicionar dados aos gráficos
+            registrosGerais.forEach((registro, index) => {
+                const label = registro.mesNome;
+                consumoGeralData.labels.push(label);
+                consumoGeralData.datasets[0].data.push(registro.consumo);
+                
+                // Calcular variação percentual
+                if (index > 0) {
+                    const prevConsumo = registrosGerais[index - 1].consumo;
+                    const variacao = ((registro.consumo - prevConsumo) / prevConsumo * 100).toFixed(1);
+                    variacaoMensalData.labels.push(label);
+                    variacaoMensalData.datasets[0].data.push(parseFloat(variacao));
+                }
+            });
+            
+            // Atualizar gráficos
+            initCharts();
+        }
+
+        // Atualizar dados de categoria
+        function atualizarDadosCategoria(registro) {
+            // Encontrar o índice da categoria no gráfico
+            const categoriaIndex = categoryChartData.labels.indexOf(registro.categoriaNome);
+            
+            if (categoriaIndex !== -1) {
+                // Atualizar o valor no gráfico de categorias
+                categoryChartData.datasets[0].data[categoriaIndex] += registro.consumo;
+                
+                // Atualizar o gráfico de categorias
+                initCategoryChart();
+                
+                // Atualizar o card correspondente
+                const card = document.querySelector(`.category-card[data-category="${registro.categoria}"] p`);
+                if (card) {
+                    const currentValue = parseFloat(card.textContent.split(' ')[0]);
+                    card.textContent = (currentValue + registro.consumo).toLocaleString('pt-BR') + ' kWh';
+                }
+            }
+        }
+
+        // Atualizar tabela de registros gerais
+        function atualizarTabelaRegistrosGerais() {
+            const tbody = document.getElementById('corpo-tabela-gerais');
+            tbody.innerHTML = '';
+            
+            // Ordenar registros por mês (do mais recente para o mais antigo)
+            const registrosOrdenados = [...registrosGerais].sort((a, b) => b.mes - a.mes);
+            
+            registrosOrdenados.forEach(registro => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${registro.mesNome}</td>
+                    <td>${registro.consumo.toLocaleString('pt-BR')}</td>
+                    <td>R$ ${registro.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td>${registro.observacoes || '-'}</td>
+                    <td class="action-buttons">
+                        <button class="action-btn btn-danger" data-id="${registro.id}" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Adicionar eventos aos botões de excluir
+            document.querySelectorAll('#corpo-tabela-gerais .btn-danger').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    excluirRegistroGeral(id);
+                });
+            });
+        }
+
+        // Atualizar tabela de registros por categoria
+        function atualizarTabelaRegistrosCategorias() {
+            const tbody = document.getElementById('corpo-tabela-categorias');
+            tbody.innerHTML = '';
+            
+            // Ordenar registros por mês (do mais recente para o mais antigo)
+            const registrosOrdenados = [...registrosCategorias].sort((a, b) => b.mes - a.mes);
+            
+            registrosOrdenados.forEach(registro => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${registro.mesNome}</td>
+                    <td>${registro.categoriaNome}</td>
+                    <td>${registro.localNome}</td>
+                    <td>${registro.consumo.toLocaleString('pt-BR')}</td>
+                    <td>${registro.observacoes || '-'}</td>
+                    <td class="action-buttons">
+                        <button class="action-btn btn-danger" data-id="${registro.id}" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Adicionar eventos aos botões de excluir
+            document.querySelectorAll('#corpo-tabela-categorias .btn-danger').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    excluirRegistroCategoria(id);
+                });
+            });
+        }
+
+        // Excluir registro geral
+        function excluirRegistroGeral(id) {
+            if (confirm('Tem certeza que deseja excluir este registro?')) {
+                const index = registrosGerais.findIndex(reg => reg.id === id);
+                if (index !== -1) {
+                    registrosGerais.splice(index, 1);
+                    salvarDados();
+                    atualizarGraficosGerais();
+                    atualizarTabelaRegistrosGerais();
+                    alert('Registro excluído com sucesso!');
+                }
+            }
+        }
+
+        // Excluir registro por categoria
+        function excluirRegistroCategoria(id) {
+            if (confirm('Tem certeza que deseja excluir este registro?')) {
+                const index = registrosCategorias.findIndex(reg => reg.id === id);
+                if (index !== -1) {
+                    const registro = registrosCategorias[index];
+                    
+                    // Remover o consumo dos dados da categoria
+                    const categoriaIndex = categoryChartData.labels.indexOf(registro.categoriaNome);
+                    if (categoriaIndex !== -1) {
+                        categoryChartData.datasets[0].data[categoriaIndex] -= registro.consumo;
+                        
+                        // Atualizar o card correspondente
+                        const card = document.querySelector(`.category-card[data-category="${registro.categoria}"] p`);
+                        if (card) {
+                            const currentValue = parseFloat(card.textContent.split(' ')[0]);
+                            card.textContent = (currentValue - registro.consumo).toLocaleString('pt-BR') + ' kWh';
+                        }
+                    }
+                    
+                    // Remover o registro
+                    registrosCategorias.splice(index, 1);
+                    salvarDados();
+                    
+                    // Atualizar gráficos e tabela
+                    initCategoryChart();
+                    atualizarTabelaRegistrosCategorias();
+                    alert('Registro excluído com sucesso!');
+                }
+            }
+        }
+
+        // Exportar registros gerais para TXT (formatado como tabela)
+        document.getElementById('exportar-gerais').addEventListener('click', () => {
+            if (registrosGerais.length === 0) {
+                alert('Não há registros gerais para exportar!');
+                return;
+            }
+            
+            // Cabeçalho
+            let texto = 'REGISTROS GERAIS DE CONSUMO DE ENERGIA\n\n';
+            texto += '='.repeat(80) + '\n';
+            texto += '| Mês      | Consumo (kWh) | Valor (R$)  | Observações' + ' '.repeat(30) + '|\n';
+            texto += '='.repeat(80) + '\n';
+            
+            // Linhas de dados
+            registrosGerais.forEach(registro => {
+                const mes = registro.mesNome.padEnd(9);
+                const consumo = registro.consumo.toString().padStart(13);
+                const valor = registro.valor.toFixed(2).padStart(11);
+                const obs = (registro.observacoes || '-').substring(0, 40).padEnd(40);
+                
+                texto += `| ${mes} | ${consumo} | ${valor} | ${obs} |\n`;
+            });
+            
+            texto += '='.repeat(80) + '\n';
+            texto += `Total de registros: ${registrosGerais.length}`;
+            
+            exportarParaTXT(texto, 'registros-gerais-energia.txt');
+        });
+
+        // Exportar registros por categoria para TXT (formatado como tabela)
+        document.getElementById('exportar-categorias').addEventListener('click', () => {
+            if (registrosCategorias.length === 0) {
+                alert('Não há registros por categoria para exportar!');
+                return;
+            }
+            
+            // Cabeçalho
+            let texto = 'REGISTROS DE CONSUMO DE ENERGIA POR CATEGORIA\n\n';
+            texto += '='.repeat(100) + '\n';
+            texto += '| Mês      | Categoria    | Local              | Consumo (kWh) | Observações' + ' '.repeat(20) + '|\n';
+            texto += '='.repeat(100) + '\n';
+            
+            // Linhas de dados
+            registrosCategorias.forEach(registro => {
+                const mes = registro.mesNome.padEnd(9);
+                const categoria = registro.categoriaNome.substring(0, 12).padEnd(12);
+                const local = registro.localNome.substring(0, 18).padEnd(18);
+                const consumo = registro.consumo.toString().padStart(13);
+                const obs = (registro.observacoes || '-').substring(0, 30).padEnd(30);
+                
+                texto += `| ${mes} | ${categoria} | ${local} | ${consumo} | ${obs} |\n`;
+            });
+            
+            texto += '='.repeat(100) + '\n';
+            texto += `Total de registros: ${registrosCategorias.length}`;
+            
+            exportarParaTXT(texto, 'registros-categoria-energia.txt');
+        });
+
+        // Função para exportar texto para arquivo TXT
+        function exportarParaTXT(texto, nomeArquivo) {
+            const blob = new Blob([texto], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nomeArquivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Efeito do cursor
+        const cursorFollower = document.querySelector('.cursor-follower');
+        
+        document.addEventListener('mousemove', (e) => {
+            cursorFollower.style.left = e.clientX + 'px';
+            cursorFollower.style.top = e.clientY + 'px';
+        });
+        
+        // Efeitos de hover nos cards
+        const dataCards = document.querySelectorAll('.data-card, .category-card, .tip-card');
+        
+        dataCards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const angleX = (y - centerY) / 20;
+                const angleY = (centerX - x) / 20;
+                
+                card.style.transform = `rotateX(${angleX}deg) rotateY(${angleY}deg) translateY(-10px)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+            });
+        });
+        
+        // Animações de scroll
+        const animateElements = document.querySelectorAll('[data-animate]');
+        
+        const animateOnScroll = () => {
+            animateElements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                
+                if (elementTop < windowHeight - 100) {
+                    element.classList.add('animate');
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', animateOnScroll);
+        window.addEventListener('load', animateOnScroll);
+        
+        // Navegação suave
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+        
+        // Inicializar gráficos quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', () => {
+            // Carregar dados do localStorage
+            registrosGerais = JSON.parse(localStorage.getItem('registrosGerais')) || [];
+            registrosCategorias = JSON.parse(localStorage.getItem('registrosCategorias')) || [];
+            
+            // Atualizar gráficos e tabelas com os dados carregados
+            initCharts();
+            initCategoryChart();
+            atualizarGraficosGerais();
+            atualizarTabelaRegistrosGerais();
+            atualizarTabelaRegistrosCategorias();
+        });
+        
+        // Simulação de dados dinâmicos (seria substituído por dados reais)
+        function updateEnergyValue() {
+            const energyValue = document.querySelector('.energy-value');
+            const randomVariation = (Math.random() * 0.2 - 0.1).toFixed(2);
+            const baseValue = 17300;
+            const newValue = (baseValue * (1 + parseFloat(randomVariation))).toFixed(0);
+            
+            energyValue.textContent = newValue + ' kWh';
+            
+            // Animar mudança
+            energyValue.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                energyValue.style.transform = 'scale(1)';
+            }, 300);
+        }
+        
+        // Atualizar a cada 5 segundos (simulação)
+        setInterval(updateEnergyValue, 5000);
+    </script>
+</body>
+</html>
